@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { PlusCircle, Hash } from 'lucide-react';
+import { setDoc, serverTimestamp, doc } from 'firebase/firestore';
 
 import {
   SidebarContent,
@@ -85,9 +86,7 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
   return (
     <>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <h2 className="font-headline text-2xl">SyncStream</h2>
-        </div>
+        <h2 className="font-headline text-2xl">SyncStream</h2>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
