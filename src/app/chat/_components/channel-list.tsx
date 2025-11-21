@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, setDoc } from 'firebase/firestore';
 import { PlusCircle, Hash } from 'lucide-react';
 
 import {
@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useCollection, useFirestore, addDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, addDocumentNonBlocking, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { Channel } from '@/lib/types';
 
 interface ChannelListProps {
@@ -33,7 +33,7 @@ interface ChannelListProps {
 }
 
 export default function ChannelList({ onChannelSelect }: ChannelListProps) {
-  const { user, userProfile } = useAuthContext();
+  const { user } = useAuthContext();
   const firestore = useFirestore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
@@ -60,7 +60,13 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
         members: [user.uid],
       };
       const channelsCollection = collection(firestore, 'channels');
-      addDocumentNonBlocking(channelsCollection, channelData);
+      const newDocRefPromise = addDocumentNonBlocking(channelsCollection, channelData);
+      
+      newDocRefPromise.then(docRef => {
+        if(docRef) {
+          setDocumentNonBlocking(docRef, { id: docRef.id }, { merge: true });
+        }
+      });
       
       toast({
         title: 'Channel created',
