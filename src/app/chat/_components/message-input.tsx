@@ -42,7 +42,7 @@ export default function MessageInput({ channelId }: MessageInputProps) {
     
     setDocumentNonBlocking(newMessageRef, messageData, {});
 
-    if (messageType === 'youtube') {
+    if (messageType === 'youtube' && userProfile) {
         const channelRef = doc(firestore, 'channels', channelId);
         updateDoc(channelRef, {
             currentTrack: {
