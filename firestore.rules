@@ -150,14 +150,15 @@ service cloud.firestore {
 
     /**
      * @description Controls access to user profile documents. Only the owner of the
-     * profile can read or write their own data.
+     * profile can read or write their own data. The read permission allows a user to
+     * check for their own document's existence without it actually needing to exist.
      * @path /users/{userId}
      * @allow A user with UID 'user_abc' can (get) their own profile at `/users/user_abc`.
      * @deny A user with UID 'user_xyz' is blocked from (get)ting the profile at `/users/user_abc`.
      * @principle Restricts access to a user's own data tree (Path-Based Ownership).
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow read: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId) && isValidNewUser(userId);
       allow update: if isOwner(userId) && resource != null && isUserImmutable();
@@ -212,3 +213,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
