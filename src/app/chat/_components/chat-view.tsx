@@ -51,18 +51,23 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
-          {messages?.map((msg) => (
+          {messages?.map((msg) => {
+            // Defensive check for older messages that might not have user info
+            const displayName = msg.displayName || 'User';
+            const avatarSeed = msg.avatarSeed || msg.userId;
+
+            return (
               <div key={msg.id} className="flex items-start gap-4">
                 <Image
-                  src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${msg.avatarSeed}`}
-                  alt={`${msg.displayName}'s avatar`}
+                  src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${avatarSeed}`}
+                  alt={`${displayName}'s avatar`}
                   width={40}
                   height={40}
                   className="rounded-full bg-muted"
                   unoptimized
                 />
                 <div className="flex-1">
-                  <p className="font-semibold">{msg.displayName}</p>
+                  <p className="font-semibold">{displayName}</p>
                   {msg.type === 'youtube' ? (
                      <a href={msg.text} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                       Shared a YouTube video: {msg.text}
@@ -73,7 +78,7 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
                 </div>
               </div>
             )
-          )}
+          })}
           <div ref={messagesEndRef} />
         </div>
       </div>
