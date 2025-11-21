@@ -2,6 +2,7 @@
 
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
@@ -82,5 +83,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuthContext = () => {
   return useContext(AuthContext);
 };
-
-    
