@@ -40,6 +40,8 @@ export default function MusicSearchSheet({
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  const isAddDisabled = !channel;
+
   useEffect(() => {
     if (debouncedQuery) {
       setIsLoading(true);
@@ -144,10 +146,10 @@ export default function MusicSearchSheet({
                   <p className="truncate font-medium">{track.title}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handlePlayNow(track)}>
+                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handlePlayNow(track)} disabled={isAddDisabled}>
                     <Play className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handleAddToQueue(track)}>
+                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handleAddToQueue(track)} disabled={isAddDisabled}>
                     <PlusSquare className="h-5 w-5" />
                   </Button>
                 </div>
