@@ -129,9 +129,9 @@ service cloud.firestore {
      * must match the parent collection.
      */
     function isValidNewMessage(channelId) {
-      // The messageId is auto-generated, so we don't validate it here.
-      // We validate that the user is who they say they are, and the message is for the correct channel.
-      return request.resource.data.userId == request.auth.uid;
+      return request.resource.data.id != null
+        && request.resource.data.channelId == channelId
+        && request.resource.data.userId == request.auth.uid;
     }
 
 

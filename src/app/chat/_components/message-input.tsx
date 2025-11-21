@@ -22,22 +22,20 @@ export default function MessageInput({ channelId }: MessageInputProps) {
     if (!message.trim() || !user || !userProfile) return;
 
     const messagesCollection = collection(firestore, 'channels', channelId, 'messages');
+    const newMessageRef = doc(messagesCollection);
     
-    // The `addDoc` function will auto-generate an ID for the new message.
-    const newMessageRef = await addDocumentNonBlocking(messagesCollection, {
+    const messageData = {
+      id: newMessageRef.id,
       text: message,
       userId: user.uid,
       displayName: userProfile.displayName,
       avatarSeed: userProfile.avatarSeed,
       createdAt: serverTimestamp(),
       type: 'text',
-      channelId: channelId, // Add channelId to the message document
-    });
-
-    if (newMessageRef) {
-      // Set the id of the document to the auto-generated id.
-      setDocumentNonBlocking(newMessageRef, { id: newMessageRef.id }, { merge: true });
-    }
+      channelId: channelId,
+    };
+    
+    setDocumentNonBlocking(newMessageRef, messageData, {});
 
     setMessage('');
   };
