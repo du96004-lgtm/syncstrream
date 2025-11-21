@@ -1,8 +1,9 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+
+import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -11,22 +12,24 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app;
-if (!getApps().length) {
-  if (
-    !firebaseConfig.apiKey ||
-    !firebaseConfig.authDomain ||
-    !firebaseConfig.projectId
-  ) {
-    throw new Error(
-      'Firebase configuration is missing. Make sure to set the environment variables in .env'
-    );
+function getFirebaseApp(options: FirebaseOptions) {
+  if (!getApps().length) {
+    if (
+      !options.apiKey ||
+      !options.authDomain ||
+      !options.projectId
+    ) {
+      throw new Error(
+        'Firebase configuration is missing. Make sure to set the environment variables in .env'
+      );
+    }
+    return initializeApp(options);
+  } else {
+    return getApp();
   }
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
 }
 
+const app = getFirebaseApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
