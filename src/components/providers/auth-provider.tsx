@@ -1,13 +1,12 @@
 'use client';
 
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { onSnapshot, doc } from 'firebase/firestore';
 import { usePathname, useRouter } from 'next/navigation';
-
-import { auth, db } from '@/lib/firebase';
-import type { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import type { UserProfile } from '@/lib/types';
+import type { User } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -22,37 +21,19 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (!user) {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
 
-  useEffect(() => {
-    if (user) {
-      const unsub = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-        if (doc.exists()) {
-          setUserProfile(doc.data() as UserProfile);
-        } else {
-          setUserProfile(null);
-        }
-        setLoading(false);
-      });
-      return () => unsub();
-    } else {
-      setUserProfile(null);
-    }
-  }, [user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  const loading = isUserLoading || isProfileLoading;
 
   useEffect(() => {
     if (loading) return;
@@ -75,8 +56,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, userProfile, loading, pathname, router]);
   
-  const value = { user, userProfile, loading };
-
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -85,9 +64,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, userProfile: userProfile || null, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => {
+export const useAuthContext = () => {
   return useContext(AuthContext);
 };

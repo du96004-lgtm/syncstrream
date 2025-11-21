@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { initiateAnonymousSignIn } from '@/firebase';
 
 export default function AuthForm() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingAnon, setLoadingAnon] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
 
   const handleGoogleSignIn = async () => {
     setLoadingGoogle(true);
@@ -35,7 +37,7 @@ export default function AuthForm() {
   const handleAnonymousSignIn = async () => {
     setLoadingAnon(true);
     try {
-      await signInAnonymously(auth);
+      initiateAnonymousSignIn(auth);
       // The AuthProvider will handle redirection
     } catch (error) {
       console.error('Error signing in anonymously:', error);
@@ -44,7 +46,8 @@ export default function AuthForm() {
         description: 'Could not sign in anonymously. Please try again.',
         variant: 'destructive',
       });
-      setLoadingAnon(false);
+    } finally {
+      // setLoadingAnon(false); // AuthProvider handles redirects, so this might not be necessary
     }
   };
 

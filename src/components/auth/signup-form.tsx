@@ -3,18 +3,18 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { RefreshCcw, Loader2 } from 'lucide-react';
 
-import { useAuth } from '@/components/providers/auth-provider';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignupForm() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [displayName, setDisplayName] = useState('');
   const [avatarSeed, setAvatarSeed] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,13 +35,14 @@ export default function SignupForm() {
 
     setLoading(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        uid: user.uid,
+      const userRef = doc(firestore, 'users', user.uid);
+      const userData = {
+        id: user.uid, // Switched from uid to id
         displayName: displayName.trim(),
         avatarSeed,
         createdAt: serverTimestamp(),
-      });
+      };
+      setDocumentNonBlocking(userRef, userData, { merge: true });
       router.push('/chat');
     } catch (error) {
       console.error('Error creating user profile:', error);
