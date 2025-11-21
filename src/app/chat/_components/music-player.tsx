@@ -26,16 +26,25 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   useEffect(() => {
-    // This effect now ONLY handles play/pause for the *currently loaded* video.
-    // It does not try to play a new video. The `key` prop on the component handles that.
-    if (playerRef.current && playerRef.current.getPlayerState) {
+    const player = playerRef.current;
+    if (player && player.getPlayerState) {
+        // If the track should be playing, call playVideo.
         if (currentTrack.isPlaying) {
-            playerRef.current.playVideo();
-        } else {
-            playerRef.current.pauseVideo();
+            // Check if it's already playing to avoid unnecessary API calls.
+            if (player.getPlayerState() !== 1) {
+                player.playVideo();
+            }
+        } 
+        // If the track should be paused, call pauseVideo.
+        else {
+             // Check if it's not already paused to avoid unnecessary calls.
+            if (player.getPlayerState() !== 2) {
+                player.pauseVideo();
+            }
         }
     }
-  }, [currentTrack?.isPlaying]);
+  }, [currentTrack, videoId]); // Depend on the whole track object and videoId to re-evaluate on any change.
+
 
   const handlePlayPause = async () => {
     if (!currentTrack) return;
@@ -48,9 +57,9 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
 
   const onPlayerReady = (event: any) => {
     playerRef.current = event.target;
-    // When the player is ready, we sync its state with our `currentTrack` state.
+    // When the player is ready, explicitly check the isPlaying status and command the player.
     if (currentTrack?.isPlaying) {
-      playerRef.current.playVideo();
+      event.target.playVideo();
     }
   };
 
@@ -62,8 +71,6 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
     height: '0',
     width: '0',
     playerVars: {
-      // Autoplay is crucial here. When the component re-mounts due to the key change,
-      // this will make it play automatically if isPlaying is true.
       autoplay: currentTrack.isPlaying ? 1 : 0,
     },
   };
