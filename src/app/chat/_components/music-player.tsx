@@ -26,14 +26,14 @@ export default function MusicPlayer({ channel, className, opts: customOpts, show
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   useEffect(() => {
-    if (playerRef.current && currentTrack) {
+    if (playerRef.current && currentTrack && videoId) {
       if (currentTrack.isPlaying) {
         playerRef.current.playVideo();
       } else {
         playerRef.current.pauseVideo();
       }
     }
-  }, [currentTrack?.isPlaying, playerRef.current]);
+  }, [currentTrack?.isPlaying, videoId, playerRef.current]);
 
   const handlePlayPause = async () => {
     if (!currentTrack) return;
