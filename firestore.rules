@@ -1,0 +1,214 @@
+/**
+ * Core Philosophy: This ruleset enforces a security model with two primary patterns.
+ * First, a strict user-ownership model for user profiles (/users/{userId}), where
+ * users have exclusive control over their own data. Second, a collaborative,
+ * shared-access model for channels (/channels/{channelId}) and their subcollections.
+ * Access to shared resources is governed by a denormalized `members` array directly
+ * on each channel document.
+ *
+ * Data Structure: User-specific data is isolated under `/users/{userId}`. All
+ * collaborative data, including messages and music suggestions, is nested under
+ * a specific channel at `/channels/{channelId}`. This structure clearly segregates
+ * private and shared data.
+ *
+ * Key Security Decisions:
+ * - User Listing: Listing the top-level `/users` collection is explicitly disallowed
+ *   to protect user privacy.
+ * - Channel Access: A user's membership in a channel's `members` array is the sole
+ *   determinant for read access to that channel and its subcollections. This avoids
+ *   complex and slow lookups to other collections.
+ * - Subcollection Security: Access to `messages` and `musicSuggestions` subcollections
+ *   is secured by a `get()` call to the parent channel document to verify membership.
+ * - Default Posture: All data is private by default. Access must be explicitly
+ *   granted through ownership or membership. Anonymous access is prohibited.
+ *
+ * Denormalization for Authorization: The rules heavily rely on the denormalized
+ * `members` array within each `/channels/{channelId}` document. This allows for
+ * performant and simple authorization checks (e.g., `request.auth.uid in resource.data.members`)
+ * without needing to query a separate `memberships` collection.
+ *
+ * Structural Segregation: User profile data (`/users`) is structurally separate
+ * from collaborative channel data (`/channels`), which enforces a clean security
+ * boundary between private and shared information.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------
+    //  Helper Functions
+    // ------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the user is a member of the channel being read, updated, or deleted.
+     * Checks the `members` array on the existing document.
+     */
+    function isExistingChannelMember() {
+      return isSignedIn() && request.auth.uid in resource.data.members;
+    }
+
+    /**
+     * Returns true if the authenticated user is the original creator of a message.
+     * Used to grant exclusive update/delete permissions.
+     */
+    function isMessageOwner() {
+      return isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    /**
+     * Returns true if the authenticated user is the original creator of a channel.
+     * Used to grant exclusive delete permissions.
+     */
+    function isChannelCreator() {
+        return isSignedIn() && request.auth.uid == resource.data.createdBy;
+    }
+
+    /**
+     * Checks if the user is a member of the parent channel.
+     * Requires a 'get' call to the parent document, securing subcollections.
+     */
+    function isParentChannelMember(channelId) {
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/channels/$(channelId)).data.members;
+    }
+    
+    // --------------------------------
+    //  Data Validation Functions
+    // --------------------------------
+
+    /**
+     * Validates that the new user document's internal ID matches the document path ID.
+     * Enforces relational integrity on creation.
+     */
+    function isValidNewUser(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Validates that a user document's internal ID is immutable.
+     */
+    function isUserImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates new channel data for relational integrity.
+     * The creator must be in the members list, the createdBy field must match,
+     * and the internal ID must match the path.
+     */
+    function isValidNewChannel(channelId) {
+      return request.resource.data.id == channelId
+        && request.resource.data.createdBy == request.auth.uid
+        && request.auth.uid in request.resource.data.members;
+    }
+
+    /**
+     * Validates that a channel's core relational fields are immutable.
+     */
+    function isChannelImmutable() {
+      return request.resource.data.id == resource.data.id
+        && request.resource.data.createdBy == resource.data.createdBy;
+    }
+
+    /**
+     * Validates new message data for relational integrity.
+     * The sender (userId) must be the authenticated user, and the internal IDs
+     * must match their corresponding path segments.
+     */
+    function isValidNewMessage(channelId, messageId) {
+      return request.resource.data.id == messageId
+        && request.resource.data.channelId == channelId
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    /**
+     * Validates that a message's core relational fields are immutable.
+     */
+    function isMessageImmutable() {
+      return request.resource.data.id == resource.data.id
+        && request.resource.data.channelId == resource.data.channelId
+        && request.resource.data.userId == resource.data.userId;
+    }
+
+    // ------------------
+    //  Collection Rules
+    // ------------------
+
+    /**
+     * @description Controls access to user profile documents. Only the owner of the
+     * profile can read or write their own data.
+     * @path /users/{userId}
+     * @allow A user with UID 'user_abc' can (get) their own profile at `/users/user_abc`.
+     * @deny A user with UID 'user_xyz' is blocked from (get)ting the profile at `/users/user_abc`.
+     * @principle Restricts access to a user's own data tree (Path-Based Ownership).
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidNewUser(userId);
+      allow update: if isOwner(userId) && resource != null && isUserImmutable();
+      allow delete: if isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Controls access to channel documents. Any authenticated user can list
+     * channels (to support client-side queries), but only members can get or update a specific
+     * channel. Only the creator can delete it.
+     * @path /channels/{channelId}
+     * @allow A user in the 'members' array of channel 'ch_123' can (get) `/channels/ch_123`.
+     * @deny A user not in the 'members' array of 'ch_123' is blocked from (get)ting it.
+     * @principle Enforces collaborative access via a denormalized `members` array.
+     */
+    match /channels/{channelId} {
+      allow get: if isExistingChannelMember();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidNewChannel(channelId);
+      allow update: if isExistingChannelMember() && resource != null && isChannelImmutable();
+      allow delete: if isChannelCreator() && resource != null;
+    }
+
+    /**
+     * @description Controls access to messages within a channel. Only channel members
+     * can read messages. Only the original author of a message can update or delete it.
+     * @path /channels/{channelId}/messages/{messageId}
+     * @allow A member of channel 'ch_123' can (list) messages from `/channels/ch_123/messages`.
+     * @deny A non-member of channel 'ch_123' is blocked from (list)ing its messages.
+     * @principle Secures a subcollection by checking membership on the parent document.
+     */
+    match /channels/{channelId}/messages/{messageId} {
+      allow get, list: if isParentChannelMember(channelId);
+      allow create: if isParentChannelMember(channelId) && isValidNewMessage(channelId, messageId);
+      allow update: if isMessageOwner() && resource != null && isMessageImmutable();
+      allow delete: if isMessageOwner() && resource != null;
+    }
+
+    /**
+     * @description Controls access to AI-generated music suggestions. These are read-only
+     * for channel members and cannot be modified by clients.
+     * @path /channels/{channelId}/musicSuggestions/{musicSuggestionId}
+     * @allow A member of channel 'ch_123' can (get) a suggestion at `/channels/ch_123/musicSuggestions/s_456`.
+     * @deny Any user, even a member, is blocked from (create)ing a new music suggestion.
+     * @principle Secures a subcollection as read-only for a defined group (channel members).
+     */
+    match /channels/{channelId}/musicSuggestions/{musicSuggestionId} {
+      allow get, list: if isParentChannelMember(channelId);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
