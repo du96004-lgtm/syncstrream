@@ -26,14 +26,16 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   useEffect(() => {
-    if (playerRef.current && videoId) {
-      if (currentTrack.isPlaying) {
-        playerRef.current.playVideo();
-      } else {
-        playerRef.current.pauseVideo();
-      }
+    // This effect now ONLY handles play/pause for the *currently loaded* video.
+    // It does not try to play a new video. The `key` prop on the component handles that.
+    if (playerRef.current && playerRef.current.getPlayerState) {
+        if (currentTrack.isPlaying) {
+            playerRef.current.playVideo();
+        } else {
+            playerRef.current.pauseVideo();
+        }
     }
-  }, [currentTrack?.isPlaying, videoId]);
+  }, [currentTrack?.isPlaying]);
 
   const handlePlayPause = async () => {
     if (!currentTrack) return;
@@ -46,6 +48,7 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
 
   const onPlayerReady = (event: any) => {
     playerRef.current = event.target;
+    // When the player is ready, we sync its state with our `currentTrack` state.
     if (currentTrack?.isPlaying) {
       playerRef.current.playVideo();
     }
@@ -59,15 +62,22 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
     height: '0',
     width: '0',
     playerVars: {
-      autoplay: 0,
+      // Autoplay is crucial here. When the component re-mounts due to the key change,
+      // this will make it play automatically if isPlaying is true.
+      autoplay: currentTrack.isPlaying ? 1 : 0,
     },
   };
   
-  const opts = { ...defaultOpts, ...customOpts };
+  const opts = { ...defaultOpts, ...customOpts, playerVars: {...defaultOpts.playerVars, ...customOpts?.playerVars} };
+  
+  // By setting the `key` to the `videoId`, we are forcing React to create a new
+  // instance of the YouTube component whenever the song changes. This is the
+  // most reliable way to handle autoplaying a new track.
+  const PlayerComponent = <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} key={videoId} />;
 
   return (
     <div className={className}>
-      <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} key={videoId} />
+      {PlayerComponent}
       {!showPlayer && (
         <div className="flex items-center gap-4 border-t bg-card p-4">
           <div className="flex-1">
