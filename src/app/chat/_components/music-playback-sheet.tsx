@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Track } from '@/lib/types';
 import MusicPlayer from './music-player';
 import Image from 'next/image';
+import { YOUTUBE_REGEX } from './message-input';
 
 interface MusicPlaybackSheetProps {
   channelId: string;
@@ -17,8 +18,6 @@ interface MusicPlaybackSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
-
-const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 
 export default function MusicPlaybackSheet({

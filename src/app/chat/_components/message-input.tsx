@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Send } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { getVideoDetails, YOUTUBE_REGEX } from '@/services/youtube';
+import { getVideoDetails } from '@/services/youtube';
 
 interface MessageInputProps {
   channelId: string;
 }
+
+export const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 
 export default function MessageInput({ channelId }: MessageInputProps) {

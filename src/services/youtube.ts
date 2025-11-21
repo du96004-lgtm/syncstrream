@@ -3,7 +3,6 @@
 import { google } from 'googleapis';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-export const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 const youtube = google.youtube({
   version: 'v3',
@@ -47,6 +46,8 @@ export async function getVideoDetails(videoUrl: string) {
         console.warn('YouTube API key is not configured. Cannot fetch video details.');
         return null;
     }
+    
+    const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
     const videoIdMatch = videoUrl.match(YOUTUBE_REGEX);
     const videoId = videoIdMatch ? videoIdMatch[1] : null;
