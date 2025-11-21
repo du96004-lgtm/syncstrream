@@ -7,7 +7,6 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Channel, Message } from '@/lib/types';
 import MessageInput from './message-input';
-import MusicPlayer from './music-player';
 
 interface ChatViewProps {
   selectedChannel: Channel | null;
@@ -52,7 +51,6 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
           {messages?.map((msg) => {
-            // Defensive check for older messages that might not have user info
             const displayName = msg.displayName || 'User';
             const avatarSeed = msg.avatarSeed || msg.userId;
 
@@ -82,7 +80,6 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
           <div ref={messagesEndRef} />
         </div>
       </div>
-      {selectedChannel.currentTrack && <MusicPlayer channel={selectedChannel} />}
       <div className="border-t p-4">
         <MessageInput channelId={selectedChannel.id} />
       </div>
