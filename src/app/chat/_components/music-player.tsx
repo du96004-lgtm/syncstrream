@@ -4,12 +4,13 @@ import { useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Play, Pause } from 'lucide-react';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { Channel } from '@/lib/types';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { Track } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 
 interface MusicPlayerProps {
-  channel: Channel;
+  channelId: string;
+  currentTrack: Track;
   className?: string;
   opts?: any;
   showPlayer?: boolean;
@@ -17,10 +18,9 @@ interface MusicPlayerProps {
 
 const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/;
 
-export default function MusicPlayer({ channel, className, opts: customOpts, showPlayer = false }: MusicPlayerProps) {
+export default function MusicPlayer({ channelId, currentTrack, className, opts: customOpts, showPlayer = false }: MusicPlayerProps) {
   const firestore = useFirestore();
   const playerRef = useRef<any>(null);
-  const { currentTrack } = channel;
 
   const videoIdMatch = currentTrack?.url.match(YOUTUBE_REGEX);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
@@ -37,11 +37,11 @@ export default function MusicPlayer({ channel, className, opts: customOpts, show
 
   const handlePlayPause = async () => {
     if (!currentTrack) return;
-    const channelRef = doc(firestore, 'channels', channel.id);
-    updateDocumentNonBlocking(channelRef, {
-      'currentTrack.isPlaying': !currentTrack.isPlaying,
-      'currentTrack.playedAt': serverTimestamp(),
-    });
+    const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
+    setDocumentNonBlocking(currentTrackRef, {
+      isPlaying: !currentTrack.isPlaying,
+      playedAt: serverTimestamp(),
+    }, { merge: true });
   };
 
   const onPlayerReady = (event: any) => {

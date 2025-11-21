@@ -7,12 +7,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Channel } from '@/lib/types';
+import { Track } from '@/lib/types';
 import MusicPlayer from './music-player';
 import Image from 'next/image';
 
 interface MusicPlaybackSheetProps {
-  channel: Channel;
+  channelId: string;
+  currentTrack: Track;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
@@ -21,16 +22,17 @@ const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\
 
 
 export default function MusicPlaybackSheet({
-  channel,
+  channelId,
+  currentTrack,
   isOpen,
   onOpenChange,
 }: MusicPlaybackSheetProps) {
     
-  if (!channel.currentTrack) {
+  if (!currentTrack) {
     return null;
   }
   
-  const videoIdMatch = channel.currentTrack.url.match(YOUTUBE_REGEX);
+  const videoIdMatch = currentTrack.url.match(YOUTUBE_REGEX);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   const playerOpts = {
@@ -50,8 +52,7 @@ export default function MusicPlaybackSheet({
         </SheetHeader>
         <Separator />
         <div className="p-4">
-            {/* The actual player is hidden here but controlled from the sheet */}
-            <MusicPlayer channel={channel} opts={playerOpts} showPlayer />
+            <MusicPlayer channelId={channelId} currentTrack={currentTrack} opts={playerOpts} showPlayer />
         </div>
         <Separator />
         <div className="p-4">
@@ -59,15 +60,15 @@ export default function MusicPlaybackSheet({
           <div className="flex items-center gap-4 rounded-md p-2 hover:bg-muted">
             {videoId && (
                  <Image
-                    src={`https://img.youtube.com/vi/${videoId}/0.jpg`}
-                    alt={channel.currentTrack.title}
+                    src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+                    alt={currentTrack.title}
                     width={64}
                     height={48}
                     className="rounded-md object-cover"
                  />
             )}
             <div className="flex-1">
-              <p className="truncate font-medium">{channel.currentTrack.title}</p>
+              <p className="truncate font-medium">{currentTrack.title}</p>
               <p className="text-sm text-muted-foreground">Now Playing</p>
             </div>
           </div>

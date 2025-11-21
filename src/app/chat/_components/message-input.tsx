@@ -43,16 +43,14 @@ export default function MessageInput({ channelId }: MessageInputProps) {
     setDocumentNonBlocking(newMessageRef, messageData, {});
 
     if (messageType === 'youtube' && userProfile) {
-        const channelRef = doc(firestore, 'channels', channelId);
-        updateDocumentNonBlocking(channelRef, {
-            currentTrack: {
-                url: message,
-                title: message, // Placeholder, can be improved with oEmbed
-                requestedBy: user.uid,
-                requestedByName: userProfile.displayName,
-                isPlaying: false,
-            }
-        });
+        const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
+        setDocumentNonBlocking(currentTrackRef, {
+            url: message,
+            title: message, // Placeholder, can be improved with oEmbed
+            requestedBy: user.uid,
+            requestedByName: userProfile.displayName,
+            isPlaying: false,
+        }, { merge: true });
     }
 
     setMessage('');

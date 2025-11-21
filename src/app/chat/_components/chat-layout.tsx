@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { doc } from 'firebase/firestore';
 import {
   Sidebar,
   SidebarProvider,
@@ -9,12 +10,14 @@ import {
 } from '@/components/ui/sidebar';
 import ChannelList from './channel-list';
 import ChatView from './chat-view';
-import { Channel } from '@/lib/types';
+import { Channel, Track } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Music, Search, Settings } from 'lucide-react';
 import MusicSearchSheet from './music-search-sheet';
 import MusicPlaybackSheet from './music-playback-sheet';
 import MusicPlayer from './music-player';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+
 
 interface ChatLayoutProps {
   selectedChannel: Channel | null;
@@ -24,6 +27,14 @@ interface ChatLayoutProps {
 export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLayoutProps) {
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
   const [isPlaybackSheetOpen, setIsPlaybackSheetOpen] = useState(false);
+  const firestore = useFirestore();
+
+  const currentTrackRef = useMemoFirebase(() => {
+    if (!selectedChannel) return null;
+    return doc(firestore, `channels/${selectedChannel.id}/currentTrack/singleton`);
+  }, [firestore, selectedChannel]);
+
+  const { data: currentTrack } = useDoc<Track>(currentTrackRef);
 
   return (
     <SidebarProvider>
@@ -42,7 +53,7 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsPlaybackSheetOpen(true)}
-                disabled={!selectedChannel?.currentTrack}
+                disabled={!currentTrack}
               >
                 <Music className="h-5 w-5" />
                 <span className="sr-only">Suggest Music</span>
@@ -59,8 +70,8 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
           </header>
           <div className="flex flex-1 flex-col overflow-hidden">
             <ChatView selectedChannel={selectedChannel} />
-            {selectedChannel && selectedChannel.currentTrack && (
-              <MusicPlayer channel={selectedChannel} />
+            {selectedChannel && currentTrack && (
+              <MusicPlayer channelId={selectedChannel.id} currentTrack={currentTrack} />
             )}
           </div>
         </main>
@@ -69,11 +80,12 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
           onOpenChange={setIsSearchSheetOpen}
           channel={selectedChannel}
         />
-        {selectedChannel && (
+        {selectedChannel && currentTrack && (
           <MusicPlaybackSheet
             isOpen={isPlaybackSheetOpen}
             onOpenChange={setIsPlaybackSheetOpen}
-            channel={selectedChannel}
+            channelId={selectedChannel.id}
+            currentTrack={currentTrack}
           />
         )}
       </SidebarInset>

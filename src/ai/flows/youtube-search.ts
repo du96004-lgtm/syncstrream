@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
 
 Search Query: {{{query}}}
 
-Return the video ID, title, thumbnail URL (use the format https://img.youtube.com/vi/<VIDEO_ID>/0.jpg), and duration for each video.`,
+Return the video ID, title, thumbnail URL (use the format https://i.ytimg.com/vi/<VIDEO_ID>/hqdefault.jpg), and duration for each video.`,
 });
 
 

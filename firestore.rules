@@ -213,5 +213,15 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if false;
     }
+    
+    /**
+     * @description Controls access to the current track document.
+     * Any channel member can read or update the track.
+     * @path /channels/{channelId}/currentTrack/singleton
+     */
+    match /channels/{channelId}/currentTrack/singleton {
+        allow get, list, create, update: if isParentChannelMember(channelId);
+        allow delete: if false;
+    }
   }
 }

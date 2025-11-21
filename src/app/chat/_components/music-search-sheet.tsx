@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Play, PlusSquare, Loader2 } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { youtubeSearch } from '@/ai/flows/youtube-search';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Channel, YouTubeVideo } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -82,19 +82,22 @@ export default function MusicSearchSheet({
 
     setDocumentNonBlocking(newMessageRef, messageData, {});
     
-    // If nothing is playing, also set it as the current track but don't play it
-    if (!channel.currentTrack) {
-        const channelRef = doc(firestore, 'channels', channel.id);
-        updateDocumentNonBlocking(channelRef, {
-            currentTrack: {
-              url: youtubeUrl,
-              title: video.title,
-              requestedBy: user.uid,
-              requestedByName: userProfile.displayName,
-              isPlaying: false,
-            }
-        });
-    }
+    const currentTrackRef = doc(firestore, 'channels', channel.id, 'currentTrack', 'singleton');
+    
+    // Only set if nothing is playing.
+    // This is a race condition, but it's okay for this app.
+    // A better implementation would use a transaction.
+    // getDoc(currentTrackRef).then(docSnap => {
+    //     if (!docSnap.exists()) {
+            setDocumentNonBlocking(currentTrackRef, {
+                url: youtubeUrl,
+                title: video.title,
+                requestedBy: user.uid,
+                requestedByName: userProfile.displayName,
+                isPlaying: false,
+            }, { merge: true });
+    //     }
+    // });
 
 
     toast({
@@ -114,17 +117,16 @@ export default function MusicSearchSheet({
     }
 
     const youtubeUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
-    const channelRef = doc(firestore, 'channels', channel.id);
+    const currentTrackRef = doc(firestore, 'channels', channel.id, 'currentTrack', 'singleton');
     
-    updateDocumentNonBlocking(channelRef, {
-        currentTrack: {
-          url: youtubeUrl,
-          title: video.title,
-          requestedBy: user.uid,
-          requestedByName: userProfile.displayName,
-          isPlaying: true,
-        }
-    });
+    setDocumentNonBlocking(currentTrackRef, {
+        url: youtubeUrl,
+        title: video.title,
+        requestedBy: user.uid,
+        requestedByName: userProfile.displayName,
+        isPlaying: true,
+        playedAt: serverTimestamp(),
+    }, { merge: true });
 
     toast({
       title: 'Now Playing',

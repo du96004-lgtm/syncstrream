@@ -22,7 +22,6 @@ export interface Channel {
   createdBy: string;
   createdAt: Timestamp;
   members: string[];
-  currentTrack?: Track;
 }
 
 export interface Message {
