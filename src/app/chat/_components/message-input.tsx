@@ -51,7 +51,6 @@ export default function MessageInput({ channelId }: MessageInputProps) {
                 requestedBy: user.uid,
                 requestedByName: userProfile.displayName,
                 isPlaying: false,
-                playedAt: serverTimestamp()
             }
         });
     }
