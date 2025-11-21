@@ -13,6 +13,7 @@ import { Channel } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Music, Search, Settings } from 'lucide-react';
 import MusicPlaybackSheet from './music-playback-sheet';
+import MusicSearchSheet from './music-search-sheet';
 
 interface ChatLayoutProps {
   selectedChannel: Channel | null;
@@ -21,6 +22,7 @@ interface ChatLayoutProps {
 
 export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLayoutProps) {
   const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
+  const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
 
   return (
     <SidebarProvider>
@@ -39,7 +41,7 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
                 <Music className="h-5 w-5" />
                 <span className="sr-only">Suggest Music</span>
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => setIsSearchSheetOpen(true)}>
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search</span>
               </Button>
@@ -58,6 +60,10 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
             onOpenChange={setIsMusicSheetOpen}
           />
         )}
+        <MusicSearchSheet
+          isOpen={isSearchSheetOpen}
+          onOpenChange={setIsSearchSheetOpen}
+        />
       </SidebarInset>
     </SidebarProvider>
   );
