@@ -26,6 +26,21 @@ interface MusicSearchSheetProps {
   channel: Channel | null;
 }
 
+function formatDuration(isoDuration: string) {
+    const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return '0:00';
+  
+    const hours = parseInt(match[1] || '0', 10);
+    const minutes = parseInt(match[2] || '0', 10);
+    const seconds = parseInt(match[3] || '0', 10);
+  
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const finalMinutes = Math.floor(totalSeconds / 60);
+    const finalSeconds = totalSeconds % 60;
+  
+    return `${finalMinutes}:${finalSeconds.toString().padStart(2, '0')}`;
+}
+
 export default function MusicSearchSheet({
   isOpen,
   onOpenChange,
@@ -82,24 +97,6 @@ export default function MusicSearchSheet({
 
     setDocumentNonBlocking(newMessageRef, messageData, {});
     
-    const currentTrackRef = doc(firestore, 'channels', channel.id, 'currentTrack', 'singleton');
-    
-    // Only set if nothing is playing.
-    // This is a race condition, but it's okay for this app.
-    // A better implementation would use a transaction.
-    // getDoc(currentTrackRef).then(docSnap => {
-    //     if (!docSnap.exists()) {
-            setDocumentNonBlocking(currentTrackRef, {
-                url: youtubeUrl,
-                title: video.title,
-                requestedBy: user.uid,
-                requestedByName: userProfile.displayName,
-                isPlaying: false,
-            }, { merge: true });
-    //     }
-    // });
-
-
     toast({
       title: 'Track Added',
       description: `"${video.title}" is now in the queue.`,
@@ -128,10 +125,6 @@ export default function MusicSearchSheet({
         playedAt: serverTimestamp(),
     }, { merge: true });
 
-    toast({
-      title: 'Now Playing',
-      description: `"${video.title}" is now playing.`,
-    });
   }
 
 
@@ -166,7 +159,7 @@ export default function MusicSearchSheet({
                     className="rounded-md object-cover"
                   />
                   <div className="absolute bottom-1 right-1 rounded-sm bg-black/70 px-1 py-0.5 text-xs text-white">
-                    {track.duration}
+                    {formatDuration(track.duration)}
                   </div>
                 </div>
                 <div className="flex-1 overflow-hidden">

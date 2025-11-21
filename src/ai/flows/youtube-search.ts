@@ -10,12 +10,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { searchYoutubeVideos } from '@/services/youtube';
 
 const YouTubeVideoSchema = z.object({
   videoId: z.string().describe('The YouTube video ID.'),
   title: z.string().describe('The title of the YouTube video.'),
   thumbnail: z.string().describe('The URL of the video thumbnail.'),
-  duration: z.string().describe('The duration of the video in MM:SS format.'),
+  duration: z.string().describe('The duration of the video in ISO 8601 format.'),
 });
 
 const YouTubeSearchInputSchema = z.object({
@@ -32,15 +33,34 @@ export async function youtubeSearch(input: YouTubeSearchInput): Promise<YouTubeS
   return youtubeSearchFlow(input);
 }
 
+
+const youtubeSearchTool = ai.defineTool(
+    {
+      name: 'youtubeSearch',
+      description: 'Search for YouTube videos',
+      inputSchema: z.object({ query: z.string() }),
+      outputSchema: z.array(z.object({
+        videoId: z.string(),
+        title: z.string(),
+        thumbnail: z.string(),
+        duration: z.string(),
+      })),
+    },
+    async (input) => {
+      return searchYoutubeVideos(input.query);
+    }
+  );
+
 const prompt = ai.definePrompt({
   name: 'youtubeSearchPrompt',
   input: { schema: YouTubeSearchInputSchema },
   output: { schema: YouTubeSearchOutputSchema },
+  tools: [youtubeSearchTool],
   prompt: `You are a YouTube music search expert. Given a search query, find 5 relevant music videos on YouTube.
 
 Search Query: {{{query}}}
 
-Return the video ID, title, thumbnail URL (use the format https://i.ytimg.com/vi/<VIDEO_ID>/hqdefault.jpg), and duration for each video.`,
+Use the youtubeSearch tool to perform the search. Then format the output as requested.`,
 });
 
 

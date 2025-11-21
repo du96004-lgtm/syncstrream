@@ -7,12 +7,12 @@ import { useAuthContext } from '@/components/providers/auth-provider';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { getVideoDetails, YOUTUBE_REGEX } from '@/services/youtube';
 
 interface MessageInputProps {
   channelId: string;
 }
 
-const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/;
 
 export default function MessageInput({ channelId }: MessageInputProps) {
   const { user, userProfile } = useAuthContext();
@@ -43,10 +43,13 @@ export default function MessageInput({ channelId }: MessageInputProps) {
     setDocumentNonBlocking(newMessageRef, messageData, {});
 
     if (messageType === 'youtube' && userProfile) {
+        const videoDetails = await getVideoDetails(message);
+        const title = videoDetails ? videoDetails.title : message;
+        
         const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
         setDocumentNonBlocking(currentTrackRef, {
             url: message,
-            title: message, // Placeholder, can be improved with oEmbed
+            title: title,
             requestedBy: user.uid,
             requestedByName: userProfile.displayName,
             isPlaying: false,
