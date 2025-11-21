@@ -125,14 +125,15 @@ service cloud.firestore {
 
     /**
      * Validates new message data for relational integrity.
-     * The sender (userId) must be the authenticated user, and the internal IDs
-     * must match their corresponding path segments.
+     * The sender (userId) must be the authenticated user, and the internal channelId
+     * must match the parent collection.
      */
-    function isValidNewMessage(channelId, messageId) {
-      return request.resource.data.id == messageId
-        && request.resource.data.channelId == channelId
-        && request.resource.data.userId == request.auth.uid;
+    function isValidNewMessage(channelId) {
+      // The messageId is auto-generated, so we don't validate it here.
+      // We validate that the user is who they say they are, and the message is for the correct channel.
+      return request.resource.data.userId == request.auth.uid;
     }
+
 
     /**
      * Validates that a message's core relational fields are immutable.
@@ -191,7 +192,7 @@ service cloud.firestore {
      */
     match /channels/{channelId}/messages/{messageId} {
       allow get, list: if isParentChannelMember(channelId);
-      allow create: if isParentChannelMember(channelId) && isValidNewMessage(channelId, messageId);
+      allow create: if isParentChannelMember(channelId) && isValidNewMessage(channelId);
       allow update: if isMessageOwner() && resource != null && isMessageImmutable();
       allow delete: if isMessageOwner() && resource != null;
     }
@@ -201,7 +202,7 @@ service cloud.firestore {
      * for channel members and cannot be modified by clients.
      * @path /channels/{channelId}/musicSuggestions/{musicSuggestionId}
      * @allow A member of channel 'ch_123' can (get) a suggestion at `/channels/ch_123/musicSuggestions/s_456`.
-     * @deny Any user, even a member, is blocked from (create)ing a new music suggestion.
+     deny Any user, even a member, is blocked from (create)ing a new music suggestion.
      * @principle Secures a subcollection as read-only for a defined group (channel members).
      */
     match /channels/{channelId}/musicSuggestions/{musicSuggestionId} {

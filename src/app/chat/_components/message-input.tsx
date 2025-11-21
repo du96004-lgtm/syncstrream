@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Send } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -17,19 +17,27 @@ export default function MessageInput({ channelId }: MessageInputProps) {
   const firestore = useFirestore();
   const [message, setMessage] = useState('');
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !user || !userProfile) return;
 
     const messagesCollection = collection(firestore, 'channels', channelId, 'messages');
-    addDocumentNonBlocking(messagesCollection, {
+    
+    // The `addDoc` function will auto-generate an ID for the new message.
+    const newMessageRef = await addDocumentNonBlocking(messagesCollection, {
       text: message,
       userId: user.uid,
       displayName: userProfile.displayName,
       avatarSeed: userProfile.avatarSeed,
       createdAt: serverTimestamp(),
       type: 'text',
+      channelId: channelId, // Add channelId to the message document
     });
+
+    if (newMessageRef) {
+      // Set the id of the document to the auto-generated id.
+      setDocumentNonBlocking(newMessageRef, { id: newMessageRef.id }, { merge: true });
+    }
 
     setMessage('');
   };
