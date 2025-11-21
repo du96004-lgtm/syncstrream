@@ -109,27 +109,19 @@ service cloud.firestore {
      * Validates new channel data for relational integrity.
      * The creator must be in the members list and the createdBy field must match.
      */
-    function isValidNewChannel() {
-      return request.resource.data.createdBy == request.auth.uid
+    function isValidNewChannel(channelId) {
+      return request.resource.data.id == channelId
+        && request.resource.data.createdBy == request.auth.uid
         && request.auth.uid in request.resource.data.members;
     }
 
     /**
      * Validates that a channel's core relational fields are immutable.
-     * The check for `id` ensures that once set, it cannot be changed.
      */
     function isChannelImmutable() {
       return request.resource.data.id == resource.data.id
         && request.resource.data.createdBy == resource.data.createdBy;
     }
-    
-    /**
-     * Ensures the channel ID is being set correctly after creation.
-     */
-    function isSettingChannelId(channelId) {
-        return request.resource.data.size() == 1 && 'id' in request.resource.data && request.resource.data.id == channelId;
-    }
-
 
     /**
      * Validates new message data for relational integrity.
@@ -184,8 +176,8 @@ service cloud.firestore {
     match /channels/{channelId} {
       allow get: if isExistingChannelMember();
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isValidNewChannel();
-      allow update: if isExistingChannelMember() && resource != null && (isChannelImmutable() || isSettingChannelId(channelId));
+      allow create: if isSignedIn() && isValidNewChannel(channelId);
+      allow update: if isExistingChannelMember() && resource != null && isChannelImmutable();
       allow delete: if isChannelCreator() && resource != null;
     }
 
