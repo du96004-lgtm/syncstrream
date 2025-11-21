@@ -15,8 +15,8 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { youtubeSearch } from '@/ai/flows/youtube-search';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Channel, YouTubeVideo } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -83,7 +83,7 @@ export default function MusicSearchSheet({
     setDocumentNonBlocking(newMessageRef, messageData, {});
 
     const channelRef = doc(firestore, 'channels', channel.id);
-    updateDoc(channelRef, {
+    updateDocumentNonBlocking(channelRef, {
         currentTrack: {
           url: youtubeUrl,
           title: video.title,
