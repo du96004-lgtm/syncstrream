@@ -28,7 +28,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/components/providers/auth-provider';
 import { useCollection, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { Channel } from '@/lib/types';
-import { SheetTitle } from '@/components/ui/sheet';
 
 interface ChannelListProps {
   onChannelSelect: (channel: Channel) => void;
@@ -87,7 +86,6 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
   return (
     <>
       <SidebarHeader>
-        <SheetTitle className="sr-only">Channels</SheetTitle>
         <h2 className="font-headline text-2xl">SyncStream</h2>
       </SidebarHeader>
       <SidebarContent>

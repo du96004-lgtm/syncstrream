@@ -9,7 +9,6 @@ import {
 import ChannelList from './channel-list';
 import ChatView from './chat-view';
 import { Channel } from '@/lib/types';
-import { SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Music, Search, Settings } from 'lucide-react';
 
@@ -22,7 +21,6 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
   return (
     <SidebarProvider>
       <Sidebar>
-        <SheetTitle className="sr-only">Channels</SheetTitle>
         <ChannelList onChannelSelect={onChannelSelect} />
       </Sidebar>
       <SidebarInset>
