@@ -27,8 +27,14 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
 
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
   
+  const usersCollection = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+
+  const { data: users } = useCollection<UserProfile>(usersCollection);
+
   const userDocs = new Map<string, UserProfile>();
-  const { data: users } = useCollection<UserProfile>(collection(firestore, 'users'));
   users?.forEach(u => userDocs.set(u.id, u));
 
   useEffect(() => {
