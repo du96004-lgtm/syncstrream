@@ -63,6 +63,7 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
         <MusicSearchSheet
           isOpen={isSearchSheetOpen}
           onOpenChange={setIsSearchSheetOpen}
+          channel={selectedChannel}
         />
       </SidebarInset>
     </SidebarProvider>

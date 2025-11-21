@@ -13,7 +13,7 @@ export interface Track {
   requestedBy: string;
   requestedByName: string;
   isPlaying: boolean;
-  playedAt: Timestamp;
+  playedAt?: Timestamp;
 }
 
 export interface Channel {
@@ -34,4 +34,11 @@ export interface Message {
   avatarSeed: string;
   type: 'text' | 'youtube';
   channelId: string;
+}
+
+export interface YouTubeVideo {
+  videoId: string;
+  title: string;
+  thumbnail: string;
+  duration: string;
 }
