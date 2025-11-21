@@ -33,37 +33,6 @@ export async function youtubeSearch(input: YouTubeSearchInput): Promise<YouTubeS
   return youtubeSearchFlow(input);
 }
 
-
-const youtubeSearchTool = ai.defineTool(
-    {
-      name: 'youtubeSearch',
-      description: 'Search for YouTube videos',
-      inputSchema: z.object({ query: z.string() }),
-      outputSchema: z.array(z.object({
-        videoId: z.string(),
-        title: z.string(),
-        thumbnail: z.string(),
-        duration: z.string(),
-      })),
-    },
-    async (input) => {
-      return searchYoutubeVideos(input.query);
-    }
-  );
-
-const prompt = ai.definePrompt({
-  name: 'youtubeSearchPrompt',
-  input: { schema: YouTubeSearchInputSchema },
-  output: { schema: YouTubeSearchOutputSchema },
-  tools: [youtubeSearchTool],
-  prompt: `You are a YouTube music search expert. Given a search query, find 5 relevant music videos on YouTube.
-
-Search Query: {{{query}}}
-
-Use the youtubeSearch tool to perform the search. Then format the output as requested.`,
-});
-
-
 const youtubeSearchFlow = ai.defineFlow(
   {
     name: 'youtubeSearchFlow',
@@ -74,7 +43,7 @@ const youtubeSearchFlow = ai.defineFlow(
     if (!input.query) {
       return { videos: [] };
     }
-    const { output } = await prompt(input);
-    return output!;
+    const searchResults = await searchYoutubeVideos(input.query);
+    return { videos: searchResults };
   }
 );
