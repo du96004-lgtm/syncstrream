@@ -2,11 +2,12 @@
 
 import { useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { Channel, Message } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { Channel, Message, UserProfile } from '@/lib/types';
 import MessageInput from './message-input';
+import MusicPlayer from './music-player';
 
 interface ChatViewProps {
   selectedChannel: Channel | null;
@@ -25,6 +26,10 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
   }, [firestore, selectedChannel]);
 
   const { data: messages, isLoading } = useCollection<Message>(messagesQuery);
+  
+  const userDocs = new Map<string, UserProfile>();
+  const { data: users } = useCollection<UserProfile>(collection(firestore, 'users'));
+  users?.forEach(u => userDocs.set(u.id, u));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,25 +55,35 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
-          {messages?.map((msg) => (
-            <div key={msg.id} className="flex items-start gap-4">
-              <Image
-                src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${msg.avatarSeed}`}
-                alt={`${msg.displayName}'s avatar`}
-                width={40}
-                height={40}
-                className="rounded-full bg-muted"
-                unoptimized
-              />
-              <div className="flex-1">
-                <p className="font-semibold">{msg.displayName}</p>
-                <div className="text-base text-foreground">{msg.text}</div>
+          {messages?.map((msg) => {
+            const user = userDocs.get(msg.userId);
+            return (
+              <div key={msg.id} className="flex items-start gap-4">
+                <Image
+                  src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user?.avatarSeed}`}
+                  alt={`${user?.displayName}'s avatar`}
+                  width={40}
+                  height={40}
+                  className="rounded-full bg-muted"
+                  unoptimized
+                />
+                <div className="flex-1">
+                  <p className="font-semibold">{user?.displayName}</p>
+                  {msg.type === 'youtube' ? (
+                     <a href={msg.text} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                      Shared a YouTube video: {msg.text}
+                    </a>
+                  ) : (
+                    <div className="text-base text-foreground">{msg.text}</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           <div ref={messagesEndRef} />
         </div>
       </div>
+      {selectedChannel.currentTrack && <MusicPlayer channel={selectedChannel} />}
       <div className="border-t p-4">
         <MessageInput channelId={selectedChannel.id} />
       </div>

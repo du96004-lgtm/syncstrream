@@ -37,7 +37,7 @@ export default function SignupForm() {
     try {
       const userRef = doc(firestore, 'users', user.uid);
       const userData = {
-        id: user.uid, // Switched from uid to id
+        id: user.uid,
         displayName: displayName.trim(),
         avatarSeed,
         createdAt: serverTimestamp(),

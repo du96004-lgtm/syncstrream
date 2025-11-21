@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export interface UserProfile {
-  uid: string;
+  id: string;
   displayName: string;
   avatarSeed: string;
   createdAt: Timestamp;
@@ -33,4 +33,5 @@ export interface Message {
   displayName: string;
   avatarSeed: string;
   type: 'text' | 'youtube';
+  channelId: string;
 }

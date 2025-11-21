@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { Send } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 interface MessageInputProps {
   channelId: string;
 }
+
+const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/;
 
 export default function MessageInput({ channelId }: MessageInputProps) {
   const { user, userProfile } = useAuthContext();
@@ -20,6 +22,9 @@ export default function MessageInput({ channelId }: MessageInputProps) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !user || !userProfile) return;
+
+    const youtubeMatch = message.match(YOUTUBE_REGEX);
+    const messageType = youtubeMatch ? 'youtube' : 'text';
 
     const messagesCollection = collection(firestore, 'channels', channelId, 'messages');
     const newMessageRef = doc(messagesCollection);
@@ -31,11 +36,25 @@ export default function MessageInput({ channelId }: MessageInputProps) {
       displayName: userProfile.displayName,
       avatarSeed: userProfile.avatarSeed,
       createdAt: serverTimestamp(),
-      type: 'text',
+      type: messageType,
       channelId: channelId,
     };
     
     setDocumentNonBlocking(newMessageRef, messageData, {});
+
+    if (messageType === 'youtube') {
+        const channelRef = doc(firestore, 'channels', channelId);
+        updateDoc(channelRef, {
+            currentTrack: {
+                url: message,
+                title: message, // Placeholder, can be improved with oEmbed
+                requestedBy: user.uid,
+                requestedByName: userProfile.displayName,
+                isPlaying: false,
+                playedAt: serverTimestamp()
+            }
+        });
+    }
 
     setMessage('');
   };
@@ -45,7 +64,7 @@ export default function MessageInput({ channelId }: MessageInputProps) {
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="Type a message..."
+        placeholder="Type a message or paste a YouTube link..."
         autoComplete="off"
       />
       <Button type="submit" size="icon" disabled={!message.trim()}>

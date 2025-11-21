@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, userProfile, loading, pathname, router, profileError]);
   
   // Show loader while we are determining auth state and profile existence
-  const isInitialRedirect = (isUserLoading || (user && isProfileLoading && !userProfile)) && pathname !== '/';
+  const isInitialRedirect = (isUserLoading || (user && isProfileLoading && !userProfile && !profileError)) && pathname !== '/';
   if (isInitialRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
