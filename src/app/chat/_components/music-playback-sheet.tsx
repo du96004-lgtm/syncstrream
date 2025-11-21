@@ -5,7 +5,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Channel } from '@/lib/types';
@@ -38,20 +37,21 @@ export default function MusicPlaybackSheet({
     height: '195',
     width: '100%',
     playerVars: {
-      autoplay: 0,
+      autoplay: 1, // Autoplay when sheet opens
       controls: 1,
     },
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full max-w-sm p-0">
+      <SheetContent className="w-full max-w-sm p-0 sm:max-w-md">
         <SheetHeader className="p-4">
           <SheetTitle>Music Playback</SheetTitle>
         </SheetHeader>
         <Separator />
         <div className="p-4">
-            <MusicPlayer channel={channel} opts={playerOpts} />
+            {/* The actual player is hidden here but controlled from the sheet */}
+            <MusicPlayer channel={channel} opts={playerOpts} showPlayer />
         </div>
         <Separator />
         <div className="p-4">

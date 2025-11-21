@@ -12,11 +12,12 @@ interface MusicPlayerProps {
   channel: Channel;
   className?: string;
   opts?: any;
+  showPlayer?: boolean;
 }
 
 const YOUTUBE_REGEX = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/;
 
-export default function MusicPlayer({ channel, className, opts: customOpts }: MusicPlayerProps) {
+export default function MusicPlayer({ channel, className, opts: customOpts, showPlayer = false }: MusicPlayerProps) {
   const firestore = useFirestore();
   const playerRef = useRef<any>(null);
   const { currentTrack } = channel;
@@ -66,16 +67,18 @@ export default function MusicPlayer({ channel, className, opts: customOpts }: Mu
 
   return (
     <div className={className}>
-      <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={opts.height === '0' ? 'hidden' : ''} />
-      <div className="flex items-center gap-4 border-t bg-card p-4">
-        <div className="flex-1">
-          <p className="font-semibold truncate text-sm">Now Playing: {currentTrack.title}</p>
-          <p className="text-xs text-muted-foreground">Requested by {currentTrack.requestedByName}</p>
+      <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} />
+      {!showPlayer && (
+        <div className="flex items-center gap-4 border-t bg-card p-4">
+          <div className="flex-1">
+            <p className="font-semibold truncate text-sm">Now Playing: {currentTrack.title}</p>
+            <p className="text-xs text-muted-foreground">Requested by {currentTrack.requestedByName}</p>
+          </div>
+          <Button size="icon" onClick={handlePlayPause}>
+            {currentTrack.isPlaying ? <Pause /> : <Play />}
+          </Button>
         </div>
-        <Button size="icon" onClick={handlePlayPause}>
-          {currentTrack.isPlaying ? <Pause /> : <Play />}
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
