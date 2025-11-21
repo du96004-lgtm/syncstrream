@@ -37,18 +37,15 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
       </div>
     );
   }
-  
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground">Loading messages...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4">
+        {isLoading && (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-muted-foreground">Loading messages...</p>
+          </div>
+        )}
         <div className="space-y-4">
           {messages?.map((msg) => {
             const displayName = msg.displayName || 'User';

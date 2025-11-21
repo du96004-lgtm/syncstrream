@@ -12,8 +12,8 @@ import ChatView from './chat-view';
 import { Channel } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Music, Search, Settings } from 'lucide-react';
-import MusicPlaybackSheet from './music-playback-sheet';
 import MusicSearchSheet from './music-search-sheet';
+import MusicPlayer from './music-player';
 
 interface ChatLayoutProps {
   selectedChannel: Channel | null;
@@ -21,7 +21,6 @@ interface ChatLayoutProps {
 }
 
 export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLayoutProps) {
-  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
 
   return (
@@ -37,7 +36,7 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
               {selectedChannel ? selectedChannel.name : 'Welcome'}
             </h1>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setIsMusicSheetOpen(true)} disabled={!selectedChannel?.currentTrack}>
+              <Button variant="ghost" size="icon" disabled>
                 <Music className="h-5 w-5" />
                 <span className="sr-only">Suggest Music</span>
               </Button>
@@ -51,15 +50,13 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
               </Button>
             </div>
           </header>
-          <ChatView selectedChannel={selectedChannel} />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <ChatView selectedChannel={selectedChannel} />
+            {selectedChannel && selectedChannel.currentTrack && (
+              <MusicPlayer channel={selectedChannel} />
+            )}
+          </div>
         </main>
-        {selectedChannel && (
-          <MusicPlaybackSheet
-            channel={selectedChannel}
-            isOpen={isMusicSheetOpen}
-            onOpenChange={setIsMusicSheetOpen}
-          />
-        )}
         <MusicSearchSheet
           isOpen={isSearchSheetOpen}
           onOpenChange={setIsSearchSheetOpen}
