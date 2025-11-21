@@ -52,7 +52,7 @@ export default function MusicSearchSheet({
     }
   }, [debouncedQuery]);
 
-  const handleAddToQueue = (video: YouTubeVideo) => {
+  const addTrackToChannel = (video: YouTubeVideo, playNow: boolean) => {
     if (!channel || !user || !userProfile) {
       toast({
         title: 'Error',
@@ -82,18 +82,28 @@ export default function MusicSearchSheet({
 
     const channelRef = doc(firestore, 'channels', channel.id);
     updateDoc(channelRef, {
-        'currentTrack.url': youtubeUrl,
-        'currentTrack.title': video.title,
-        'currentTrack.requestedBy': user.uid,
-        'currentTrack.requestedByName': userProfile.displayName,
-        'currentTrack.isPlaying': false,
+        currentTrack: {
+          url: youtubeUrl,
+          title: video.title,
+          requestedBy: user.uid,
+          requestedByName: userProfile.displayName,
+          isPlaying: playNow,
+        }
     });
 
     toast({
-      title: 'Track Added',
-      description: `"${video.title}" has been added to the queue.`,
+      title: playNow ? 'Now Playing' : 'Track Added',
+      description: `"${video.title}" is now in the queue.`,
     });
+  }
+
+  const handleAddToQueue = (video: YouTubeVideo) => {
+    addTrackToChannel(video, false);
   };
+
+  const handlePlayNow = (video: YouTubeVideo) => {
+    addTrackToChannel(video, true);
+  }
 
 
   return (
@@ -134,9 +144,9 @@ export default function MusicSearchSheet({
                   <p className="truncate font-medium">{track.title}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a href={`https://www.youtube.com/watch?v=${track.videoId}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handlePlayNow(track)}>
                     <Play className="h-5 w-5" />
-                  </a>
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handleAddToQueue(track)}>
                     <PlusSquare className="h-5 w-5" />
                   </Button>
