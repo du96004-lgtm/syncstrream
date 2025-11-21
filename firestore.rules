@@ -117,10 +117,12 @@ service cloud.firestore {
 
     /**
      * Validates that a channel's core relational fields are immutable.
+     * Only checks fields if they are present in the update request.
      */
     function isChannelImmutable() {
-      return request.resource.data.id == resource.data.id
-        && request.resource.data.createdBy == resource.data.createdBy;
+      let idUnchanged = !request.resource.data.keys().hasAny(['id']) || request.resource.data.id == resource.data.id;
+      let createdByUnchanged = !request.resource.data.keys().hasAny(['createdBy']) || request.resource.data.createdBy == resource.data.createdBy;
+      return idUnchanged && createdByUnchanged;
     }
 
     /**
