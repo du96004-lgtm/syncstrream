@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { Send } from 'lucide-react';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -44,7 +44,7 @@ export default function MessageInput({ channelId }: MessageInputProps) {
 
     if (messageType === 'youtube' && userProfile) {
         const channelRef = doc(firestore, 'channels', channelId);
-        updateDoc(channelRef, {
+        updateDocumentNonBlocking(channelRef, {
             currentTrack: {
                 url: message,
                 title: message, // Placeholder, can be improved with oEmbed

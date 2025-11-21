@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
 import { PlusCircle, Music2 } from 'lucide-react';
-import { setDoc, serverTimestamp, doc } from 'firebase/firestore';
 
 import {
   SidebarContent,
@@ -53,34 +52,25 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
   const handleCreateChannel = async () => {
     if (!newChannelName.trim() || !user) return;
 
-    try {
-      const channelsCollection = collection(firestore, 'channels');
-      const newChannelRef = doc(channelsCollection);
-      
-      const channelData = {
-        id: newChannelRef.id,
-        name: newChannelName,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-        members: [user.uid],
-      };
-      
-      setDocumentNonBlocking(newChannelRef, channelData, {});
-      
-      toast({
-        title: 'Channel created',
-        description: `Channel "${newChannelName}" has been successfully created.`,
-      });
-      setNewChannelName('');
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error creating channel:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create channel. Please try again.',
-        variant: 'destructive',
-      });
-    }
+    const channelsCollection = collection(firestore, 'channels');
+    const newChannelRef = doc(channelsCollection);
+    
+    const channelData = {
+      id: newChannelRef.id,
+      name: newChannelName,
+      createdBy: user.uid,
+      createdAt: serverTimestamp(),
+      members: [user.uid],
+    };
+    
+    setDocumentNonBlocking(newChannelRef, channelData, {});
+    
+    toast({
+      title: 'Channel created',
+      description: `Channel "${newChannelName}" has been successfully created.`,
+    });
+    setNewChannelName('');
+    setIsModalOpen(false);
   };
 
   return (

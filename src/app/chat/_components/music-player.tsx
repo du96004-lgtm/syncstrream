@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { Play, Pause } from 'lucide-react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { Channel } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 
@@ -38,7 +38,7 @@ export default function MusicPlayer({ channel, className, opts: customOpts, show
   const handlePlayPause = async () => {
     if (!currentTrack) return;
     const channelRef = doc(firestore, 'channels', channel.id);
-    await updateDoc(channelRef, {
+    updateDocumentNonBlocking(channelRef, {
       'currentTrack.isPlaying': !currentTrack.isPlaying,
       'currentTrack.playedAt': serverTimestamp(),
     });
