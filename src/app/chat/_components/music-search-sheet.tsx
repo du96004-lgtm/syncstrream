@@ -54,7 +54,7 @@ export default function MusicSearchSheet({
     }
   }, [debouncedQuery]);
 
-  const addTrackToChannel = (video: YouTubeVideo, playNow: boolean) => {
+  const addTrackToQueue = (video: YouTubeVideo) => {
     if (!channel || !user || !userProfile) {
       toast({
         title: 'Error',
@@ -81,30 +81,55 @@ export default function MusicSearchSheet({
     };
 
     setDocumentNonBlocking(newMessageRef, messageData, {});
+    
+    // If nothing is playing, also set it as the current track but don't play it
+    if (!channel.currentTrack) {
+        const channelRef = doc(firestore, 'channels', channel.id);
+        updateDocumentNonBlocking(channelRef, {
+            currentTrack: {
+              url: youtubeUrl,
+              title: video.title,
+              requestedBy: user.uid,
+              requestedByName: userProfile.displayName,
+              isPlaying: false,
+            }
+        });
+    }
 
+
+    toast({
+      title: 'Track Added',
+      description: `"${video.title}" is now in the queue.`,
+    });
+  }
+
+  const playTrackNow = (video: YouTubeVideo) => {
+    if (!channel || !user || !userProfile) {
+        toast({
+            title: 'Error',
+            description: 'You must be in a channel to play a song.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
+    const youtubeUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
     const channelRef = doc(firestore, 'channels', channel.id);
+    
     updateDocumentNonBlocking(channelRef, {
         currentTrack: {
           url: youtubeUrl,
           title: video.title,
           requestedBy: user.uid,
           requestedByName: userProfile.displayName,
-          isPlaying: playNow,
+          isPlaying: true,
         }
     });
 
     toast({
-      title: playNow ? 'Now Playing' : 'Track Added',
-      description: `"${video.title}" is now in the queue.`,
+      title: 'Now Playing',
+      description: `"${video.title}" is now playing.`,
     });
-  }
-
-  const handleAddToQueue = (video: YouTubeVideo) => {
-    addTrackToChannel(video, false);
-  };
-
-  const handlePlayNow = (video: YouTubeVideo) => {
-    addTrackToChannel(video, true);
   }
 
 
@@ -146,10 +171,10 @@ export default function MusicSearchSheet({
                   <p className="truncate font-medium">{track.title}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handlePlayNow(track)} disabled={isAddDisabled}>
+                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => playTrackNow(track)} disabled={isAddDisabled}>
                     <Play className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => handleAddToQueue(track)} disabled={isAddDisabled}>
+                  <Button variant="ghost" size="icon" className="h-auto w-auto p-0" onClick={() => addTrackToQueue(track)} disabled={isAddDisabled}>
                     <PlusSquare className="h-5 w-5" />
                   </Button>
                 </div>
