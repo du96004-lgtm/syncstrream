@@ -26,14 +26,14 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   useEffect(() => {
-    if (playerRef.current && currentTrack && videoId) {
+    if (playerRef.current && videoId) {
       if (currentTrack.isPlaying) {
         playerRef.current.playVideo();
       } else {
         playerRef.current.pauseVideo();
       }
     }
-  }, [currentTrack?.isPlaying, videoId, playerRef.current]);
+  }, [currentTrack?.isPlaying, videoId]);
 
   const handlePlayPause = async () => {
     if (!currentTrack) return;
@@ -67,7 +67,7 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
 
   return (
     <div className={className}>
-      <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} />
+      <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} key={videoId} />
       {!showPlayer && (
         <div className="flex items-center gap-4 border-t bg-card p-4">
           <div className="flex-1">
