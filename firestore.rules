@@ -61,6 +61,15 @@ service cloud.firestore {
     function isExistingChannelMember() {
       return isSignedIn() && request.auth.uid in resource.data.members;
     }
+    
+    /**
+     * Returns true if the user is joining a channel (adding themselves to the members list).
+     */
+     function isJoiningChannel() {
+        let isAddingSelf = request.resource.data.members == resource.data.members.concat([request.auth.uid]);
+        let otherFieldsUnchanged = !request.resource.data.keys().hasAny(['id', 'name', 'createdBy', 'createdAt']);
+        return isAddingSelf && otherFieldsUnchanged;
+     }
 
     /**
      * Returns true if the authenticated user is the original creator of a message.
@@ -180,7 +189,7 @@ service cloud.firestore {
       allow get: if isExistingChannelMember();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isValidNewChannel(channelId);
-      allow update: if isExistingChannelMember() && resource != null && isChannelImmutable();
+      allow update: if (isExistingChannelMember() && resource != null && isChannelImmutable()) || isJoiningChannel();
       allow delete: if isChannelCreator() && resource != null;
     }
 

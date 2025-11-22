@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, query, where, serverTimestamp, doc } from 'firebase/firestore';
-import { PlusCircle, Music2 } from 'lucide-react';
+import { collection, query, where, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { PlusCircle, Music2, UserPlus } from 'lucide-react';
 
 import {
   SidebarContent,
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,8 +36,10 @@ interface ChannelListProps {
 export default function ChannelList({ onChannelSelect }: ChannelListProps) {
   const { user } = useAuthContext();
   const firestore = useFirestore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
+  const [joinChannelId, setJoinChannelId] = useState('');
   const { toast } = useToast();
 
   const channelsQuery = useMemoFirebase(() => {
@@ -70,7 +73,32 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
       description: `Channel "${newChannelName}" has been successfully created.`,
     });
     setNewChannelName('');
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false);
+  };
+  
+  const handleJoinChannel = async () => {
+    if (!joinChannelId.trim() || !user) return;
+
+    try {
+      const channelRef = doc(firestore, 'channels', joinChannelId.trim());
+      await updateDoc(channelRef, {
+        members: arrayUnion(user.uid),
+      });
+
+      toast({
+        title: 'Channel Joined',
+        description: 'You have successfully joined the channel.',
+      });
+      setJoinChannelId('');
+      setIsJoinModalOpen(false);
+    } catch (error) {
+      console.error('Error joining channel:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not join channel. Please check the invite code and try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -94,14 +122,19 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <Button variant="ghost" onClick={() => setIsModalOpen(true)}>
+      <SidebarFooter className="flex-col gap-2 !items-stretch">
+        <Button variant="ghost" onClick={() => setIsJoinModalOpen(true)}>
+          <UserPlus />
+          <span>Join Channel</span>
+        </Button>
+        <Button variant="ghost" onClick={() => setIsCreateModalOpen(true)}>
           <PlusCircle />
           <span>Create Channel</span>
         </Button>
       </SidebarFooter>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      {/* Create Channel Dialog */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create a new channel</DialogTitle>
@@ -112,10 +145,33 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
             onChange={(e) => setNewChannelName(e.target.value)}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleCreateChannel}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Join Channel Dialog */}
+      <Dialog open={isJoinModalOpen} onOpenChange={setIsJoinModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Join a Channel</DialogTitle>
+            <DialogDescription>
+              Enter the invite code you received from a friend to join their channel.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Paste invite code here"
+            value={joinChannelId}
+            onChange={(e) => setJoinChannelId(e.target.value)}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsJoinModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleJoinChannel}>Join</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

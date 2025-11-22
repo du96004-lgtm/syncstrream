@@ -17,6 +17,7 @@ import MusicSearchSheet from './music-search-sheet';
 import MusicPlaybackSheet from './music-playback-sheet';
 import MusicPlayer from './music-player';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import ChannelSettingsSheet from './channel-settings-sheet';
 
 
 interface ChatLayoutProps {
@@ -27,6 +28,7 @@ interface ChatLayoutProps {
 export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLayoutProps) {
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
   const [isPlaybackSheetOpen, setIsPlaybackSheetOpen] = useState(false);
+  const [isSettingsSheetOpen, setIsSettingsSheetOpen] = useState(false);
   const firestore = useFirestore();
 
   const currentTrackRef = useMemoFirebase(() => {
@@ -62,7 +64,12 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search</span>
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSettingsSheetOpen(true)}
+                disabled={!selectedChannel}
+              >
                 <Settings className="h-5 w-5" />
                 <span className="sr-only">Settings</span>
               </Button>
@@ -80,6 +87,13 @@ export default function ChatLayout({ selectedChannel, onChannelSelect }: ChatLay
           onOpenChange={setIsSearchSheetOpen}
           channel={selectedChannel}
         />
+        {selectedChannel && (
+          <ChannelSettingsSheet
+            isOpen={isSettingsSheetOpen}
+            onOpenChange={setIsSettingsSheetOpen}
+            channel={selectedChannel}
+          />
+        )}
         {selectedChannel && currentTrack && (
           <MusicPlaybackSheet
             isOpen={isPlaybackSheetOpen}
