@@ -67,8 +67,7 @@ service cloud.firestore {
      * to the members list and cannot modify other fields.
      */
      function isJoiningChannel() {
-        return request.auth.uid in request.resource.data.members
-               && request.auth.uid !in resource.data.members
+        return isSignedIn() 
                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']);
      }
 
