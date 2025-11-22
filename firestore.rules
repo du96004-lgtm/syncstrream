@@ -63,17 +63,13 @@ service cloud.firestore {
     }
     
     /**
-     * Returns true if the user is joining a channel (adding themselves to the members list).
-     * This rule ensures that a user can only add themselves to the members array and cannot
-     * modify any other fields on the channel document during the join operation.
+     * Validates that a user joining a channel can only add themselves
+     * to the members list and cannot modify other fields.
      */
      function isJoiningChannel() {
-        // The user must be authenticated.
-        return isSignedIn()
-        // The incoming request must only affect the 'members' field. No other fields can be changed.
-        && request.resource.data.keys().removeAll(["members"]).size() == 0
-        // The new 'members' list must be exactly the old list plus the new user's UID.
-        && request.resource.data.members == resource.data.members.concat([request.auth.uid]);
+        return request.auth.uid in request.resource.data.members
+               && request.auth.uid !in resource.data.members
+               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']);
      }
 
     /**
