@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthContext } from '@/components/providers/auth-provider';
-import { useCollection, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { Channel } from '@/lib/types';
 
 interface ChannelListProps {
@@ -76,29 +76,20 @@ export default function ChannelList({ onChannelSelect }: ChannelListProps) {
     setIsCreateModalOpen(false);
   };
   
-  const handleJoinChannel = async () => {
+  const handleJoinChannel = () => {
     if (!joinChannelId.trim() || !user) return;
 
-    try {
-      const channelRef = doc(firestore, 'channels', joinChannelId.trim());
-      await updateDoc(channelRef, {
-        members: arrayUnion(user.uid),
-      });
+    const channelRef = doc(firestore, 'channels', joinChannelId.trim());
+    updateDocumentNonBlocking(channelRef, {
+      members: arrayUnion(user.uid),
+    });
 
-      toast({
-        title: 'Channel Joined',
-        description: 'You have successfully joined the channel.',
-      });
-      setJoinChannelId('');
-      setIsJoinModalOpen(false);
-    } catch (error) {
-      console.error('Error joining channel:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not join channel. Please check the invite code and try again.',
-        variant: 'destructive',
-      });
-    }
+    toast({
+      title: 'Joining Channel...',
+      description: 'You will be added to the channel shortly.',
+    });
+    setJoinChannelId('');
+    setIsJoinModalOpen(false);
   };
 
   return (
