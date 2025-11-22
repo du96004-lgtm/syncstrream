@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import YouTube from 'react-youtube';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Play, Pause } from 'lucide-react';
@@ -23,32 +23,36 @@ export default function MusicPlayer({ channelId, currentTrack, className }: Musi
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
   const handlePlayPause = () => {
-    if (!currentTrack) return;
+    if (!currentTrack || !playerRef.current) return;
+    
+    const newIsPlaying = !currentTrack.isPlaying;
+    if (newIsPlaying) {
+      playerRef.current.playVideo();
+    } else {
+      playerRef.current.pauseVideo();
+    }
+
     const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
     setDocumentNonBlocking(currentTrackRef, {
-      isPlaying: !currentTrack.isPlaying,
+      isPlaying: newIsPlaying,
       playedAt: serverTimestamp(),
     }, { merge: true });
   };
   
   const onPlayerReady = (event: any) => {
     playerRef.current = event.target;
-  };
-
-  useEffect(() => {
-    const player = playerRef.current;
-    if (!player || !player.getPlayerState) return;
-
+    // When the player is ready, sync its state with Firestore
     if (currentTrack.isPlaying) {
-      if (player.getPlayerState() !== 1) {
-        player.playVideo();
-      }
+      event.target.playVideo();
     } else {
-      if (player.getPlayerState() !== 2) {
-        player.pauseVideo();
-      }
+      event.target.pauseVideo();
     }
-  }, [currentTrack.isPlaying, videoId]); // videoId is included to re-run on song change
+  };
+  
+  const onPlayerStateChange = (event: any) => {
+    // This function can be used to sync player state back to Firestore if needed
+    // For example, if the user pauses directly from the YouTube player UI (if visible)
+  };
 
 
   if (!currentTrack || !videoId) {
@@ -59,27 +63,25 @@ export default function MusicPlayer({ channelId, currentTrack, className }: Musi
     height: '0',
     width: '0',
     playerVars: {
-      autoplay: currentTrack.isPlaying ? 1 : 0,
+      // Autoplay is handled by onPlayerReady to be more reliable
+      autoplay: currentTrack.isPlaying ? 1: 0,
     },
   };
-  
-  const PlayerComponent = (
-    <YouTube 
-      key={videoId} 
-      videoId={videoId} 
-      opts={opts} 
-      onReady={onPlayerReady}
-      className={'hidden'}
-    />
-  );
 
   return (
     <div className={className}>
-      {PlayerComponent}
+      <YouTube 
+        key={videoId} 
+        videoId={videoId} 
+        opts={opts} 
+        onReady={onPlayerReady}
+        onStateChange={onPlayerStateChange}
+        className={'hidden'}
+      />
       <div className="flex items-center gap-4 border-t bg-card p-4">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="font-semibold truncate text-sm">Now Playing: {currentTrack.title}</p>
-          <p className="text-xs text-muted-foreground">Requested by {currentTrack.requestedByName}</p>
+          <p className="text-xs text-muted-foreground truncate">Requested by {currentTrack.requestedByName}</p>
         </div>
         <Button size="icon" onClick={handlePlayPause}>
           {currentTrack.isPlaying ? <Pause /> : <Play />}
