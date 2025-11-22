@@ -19,14 +19,14 @@ export default function LandingPage() {
           priority
         />
       )}
-      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm -z-10" />
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm -z-10" />
       
-      <Card className="w-full max-w-md text-center shadow-2xl">
+      <Card className="w-full max-w-md text-center shadow-2xl bg-black/30 border-white/20">
         <CardHeader>
-          <CardTitle className="font-headline text-4xl tracking-tight lg:text-5xl">
+          <CardTitle className="font-headline text-4xl tracking-tight lg:text-5xl text-white">
             LET'S LISTEN TOGETHER
           </CardTitle>
-          <CardDescription className="pt-2 text-base">
+          <CardDescription className="pt-2 text-base text-gray-300">
             Listen to your favorite music synchronously and discuss it with your friends.
           </CardDescription>
         </CardHeader>

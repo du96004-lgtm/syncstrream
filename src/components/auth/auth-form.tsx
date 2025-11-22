@@ -59,7 +59,8 @@ export default function AuthForm() {
         size="lg"
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="bg-accent text-accent-foreground hover:bg-accent/90"
+        variant="outline"
+        className="bg-white/10 text-white hover:bg-white/20 border-white/20"
       >
         {loadingGoogle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Sign in with Google

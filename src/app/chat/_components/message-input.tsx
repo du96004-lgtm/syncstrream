@@ -68,6 +68,7 @@ export default function MessageInput({ channelId }: MessageInputProps) {
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Type a message or paste a YouTube link..."
         autoComplete="off"
+        className="bg-secondary/40 border-0 focus-visible:ring-1 focus-visible:ring-primary"
       />
       <Button type="submit" size="icon" disabled={!message.trim()}>
         <Send />

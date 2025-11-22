@@ -52,7 +52,7 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
             const avatarSeed = msg.avatarSeed || msg.userId;
 
             return (
-              <div key={msg.id} className="flex items-start gap-4">
+              <div key={msg.id} className="flex items-start gap-4 rounded-lg bg-secondary/40 p-3">
                 <Image
                   src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${avatarSeed}`}
                   alt={`${displayName}'s avatar`}
@@ -64,11 +64,11 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
                 <div className="flex-1">
                   <p className="font-semibold">{displayName}</p>
                   {msg.type === 'youtube' ? (
-                     <a href={msg.text} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                     <a href={msg.text} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                       Shared a YouTube video: {msg.text}
                     </a>
                   ) : (
-                    <div className="text-base text-foreground">{msg.text}</div>
+                    <div className="text-base text-foreground/80">{msg.text}</div>
                   )}
                 </div>
               </div>
@@ -77,7 +77,7 @@ export default function ChatView({ selectedChannel }: ChatViewProps) {
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="border-t p-4">
+      <div className="border-t p-4 bg-background">
         <MessageInput channelId={selectedChannel.id} />
       </div>
     </div>
