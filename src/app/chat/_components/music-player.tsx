@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import YouTube from 'react-youtube';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Play, Pause } from 'lucide-react';
@@ -25,27 +25,6 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
   const videoIdMatch = currentTrack?.url.match(YOUTUBE_REGEX);
   const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
-  useEffect(() => {
-    const player = playerRef.current;
-    if (player && player.getPlayerState) {
-        // If the track should be playing, call playVideo.
-        if (currentTrack.isPlaying) {
-            // Check if it's already playing to avoid unnecessary API calls.
-            if (player.getPlayerState() !== 1) {
-                player.playVideo();
-            }
-        } 
-        // If the track should be paused, call pauseVideo.
-        else {
-             // Check if it's not already paused to avoid unnecessary calls.
-            if (player.getPlayerState() !== 2) {
-                player.pauseVideo();
-            }
-        }
-    }
-  }, [currentTrack, videoId]); // Depend on the whole track object and videoId to re-evaluate on any change.
-
-
   const handlePlayPause = async () => {
     if (!currentTrack) return;
     const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
@@ -54,12 +33,27 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
       playedAt: serverTimestamp(),
     }, { merge: true });
   };
-
+  
   const onPlayerReady = (event: any) => {
     playerRef.current = event.target;
     // When the player is ready, explicitly check the isPlaying status and command the player.
     if (currentTrack?.isPlaying) {
       event.target.playVideo();
+    }
+  };
+
+  const onPlayerStateChange = (event: any) => {
+    if (!currentTrack) return;
+    const playerState = event.data;
+    const currentTrackRef = doc(firestore, 'channels', channelId, 'currentTrack', 'singleton');
+
+    // Player is playing
+    if (playerState === 1 && !currentTrack.isPlaying) {
+      setDocumentNonBlocking(currentTrackRef, { isPlaying: true, playedAt: serverTimestamp() }, { merge: true });
+    }
+    // Player is paused
+    else if (playerState === 2 && currentTrack.isPlaying) {
+      setDocumentNonBlocking(currentTrackRef, { isPlaying: false }, { merge: true });
     }
   };
 
@@ -80,7 +74,16 @@ export default function MusicPlayer({ channelId, currentTrack, className, opts: 
   // By setting the `key` to the `videoId`, we are forcing React to create a new
   // instance of the YouTube component whenever the song changes. This is the
   // most reliable way to handle autoplaying a new track.
-  const PlayerComponent = <YouTube videoId={videoId} opts={opts} onReady={onPlayerReady} className={!showPlayer ? 'hidden' : ''} key={videoId} />;
+  const PlayerComponent = (
+    <YouTube 
+      key={videoId} 
+      videoId={videoId} 
+      opts={opts} 
+      onReady={onPlayerReady} 
+      onStateChange={onPlayerStateChange}
+      className={!showPlayer ? 'hidden' : ''} 
+    />
+  );
 
   return (
     <div className={className}>
