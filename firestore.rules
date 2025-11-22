@@ -68,10 +68,12 @@ service cloud.firestore {
      * modify any other fields on the channel document during the join operation.
      */
      function isJoiningChannel() {
-        let isAddingSelf = request.resource.data.members == resource.data.members.concat([request.auth.uid]);
-        // Create a map of all fields in the request, then remove 'members' to check if any other field is being changed.
-        let otherFields = request.resource.data.diff(resource.data).affectedKeys().removeAll(['members']);
-        return isAddingSelf && otherFields.size() == 0;
+        // The user must be authenticated.
+        return isSignedIn()
+        // The incoming request must only affect the 'members' field. No other fields can be changed.
+        && request.resource.data.keys().removeAll(["members"]).size() == 0
+        // The new 'members' list must be exactly the old list plus the new user's UID.
+        && request.resource.data.members == resource.data.members.concat([request.auth.uid]);
      }
 
     /**
@@ -192,7 +194,7 @@ service cloud.firestore {
       allow get: if isExistingChannelMember();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isValidNewChannel(channelId);
-      allow update: if (isExistingChannelMember() && resource != null && isChannelImmutable()) || (isSignedIn() && isJoiningChannel());
+      allow update: if (isExistingChannelMember() && resource != null && isChannelImmutable()) || isJoiningChannel();
       allow delete: if isChannelCreator() && resource != null;
     }
 
