@@ -8,9 +8,9 @@ import {
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Track } from '@/lib/types';
-import MusicPlayer from './music-player';
 import Image from 'next/image';
 import { YOUTUBE_REGEX } from './message-input';
+import YouTube from 'react-youtube';
 
 interface MusicPlaybackSheetProps {
   channelId: string;
@@ -38,8 +38,8 @@ export default function MusicPlaybackSheet({
     height: '195',
     width: '100%',
     playerVars: {
-      autoplay: 1, // Autoplay when sheet opens
-      controls: 1,
+      autoplay: 1, // Let the main player control autoplay
+      controls: 1, // Show controls on the visual player
     },
   };
 
@@ -51,7 +51,13 @@ export default function MusicPlaybackSheet({
         </SheetHeader>
         <Separator />
         <div className="p-4">
-            <MusicPlayer channelId={channelId} currentTrack={currentTrack} opts={playerOpts} showPlayer />
+           {videoId && (
+             <YouTube
+                videoId={videoId}
+                opts={playerOpts}
+                className={'w-full aspect-video rounded-md'}
+             />
+           )}
         </div>
         <Separator />
         <div className="p-4">
