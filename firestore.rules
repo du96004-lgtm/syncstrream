@@ -64,11 +64,14 @@ service cloud.firestore {
     
     /**
      * Returns true if the user is joining a channel (adding themselves to the members list).
+     * This rule ensures that a user can only add themselves to the members array and cannot
+     * modify any other fields on the channel document during the join operation.
      */
      function isJoiningChannel() {
         let isAddingSelf = request.resource.data.members == resource.data.members.concat([request.auth.uid]);
-        let otherFieldsUnchanged = !request.resource.data.keys().hasAny(['id', 'name', 'createdBy', 'createdAt']);
-        return isAddingSelf && otherFieldsUnchanged;
+        // Create a map of all fields in the request, then remove 'members' to check if any other field is being changed.
+        let otherFields = request.resource.data.diff(resource.data).affectedKeys().removeAll(['members']);
+        return isAddingSelf && otherFields.size() == 0;
      }
 
     /**
@@ -189,7 +192,7 @@ service cloud.firestore {
       allow get: if isExistingChannelMember();
       allow list: if isSignedIn();
       allow create: if isSignedIn() && isValidNewChannel(channelId);
-      allow update: if (isExistingChannelMember() && resource != null && isChannelImmutable()) || isJoiningChannel();
+      allow update: if (isExistingChannelMember() && resource != null && isChannelImmutable()) || (isSignedIn() && isJoiningChannel());
       allow delete: if isChannelCreator() && resource != null;
     }
 
